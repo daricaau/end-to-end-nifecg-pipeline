@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIFECG Monitoring Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Colors */
+    --color-bg: #0b0f12;
+    --color-surface: #13191e;
+    --color-surface-alt: #1e293b;
+    --color-border: #222d35;
+    --color-white: #ffffff;
+    --color-black: #000000;
+    --color-text-muted: #8c99a6;
+    --color-text-label: #94a3b8;
+    --color-text-ecg-label: #99a6b2;
+    --color-red: #ef4444;
+    --color-green: #22c55e;
+    --color-green-alt: #21c45e;
+    --color-amber: #f59e0a;
+    --color-amber-alt: #f59e0b;
+    --color-badge-bg-good: rgba(34, 197, 94, 0.12);
+    --color-badge-bg-warning: rgba(245, 158, 11, 0.12);
+    --color-ecg-line: #21de78;
+    --color-table-head-bg: #1f2937;
+    --color-table-row-odd: #13191e;
+    --color-table-row-even: #182027;
+
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --fs-2xs: 11px;
+    --fs-xs: 12px;
+    --fs-sm: 13px;
+    --fs-base: 14px;
+    --fs-md: 16px;
+    --fs-lg: 18px;
+    --fs-3xl: 48px;
+    --fs-4xl: 56px;
+
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+    --fw-extrabold: 800;
+
+    /* Spacing */
+    --space-2: 2px;
+    --space-4: 4px;
+    --space-6: 6px;
+    --space-8: 8px;
+    --space-10: 10px;
+    --space-12: 12px;
+    --space-16: 16px;
+    --space-20: 20px;
+    --space-24: 24px;
+    --space-32: 32px;
+
+    /* Radius */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 16px;
+    --radius-2xl: 12px;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    background-color: var(--color-bg);
+    color: var(--color-white);
+    font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ul, ol {
+    list-style: none;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+
+  /* ---------- Dashboard shell ---------- */
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-24);
+    width: 100%;
+    padding: var(--space-32);
+  }
+
+  .view[hidden] {
+    display: none;
+  }
+
+  /* ---------- Header bar ---------- */
+  .header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-bottom: var(--space-16);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .header-bar__left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+  }
+
+  .header-bar__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+  }
+
+  .header-bar__toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 36px;
+    height: 36px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .header-bar__toggle-bar {
+    display: block;
+    width: 16px;
+    height: 2px;
+    background-color: var(--color-white);
+    border-radius: 1px;
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-8);
+    background-color: var(--color-red);
+    border-radius: var(--radius-sm);
+  }
+
+  .live-indicator--alt {
+    background-color: var(--color-green);
+  }
+
+  .live-indicator__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-white);
+  }
+
+  .live-indicator__label {
+    font-size: var(--fs-2xs);
+    font-weight: var(--fw-extrabold);
+    text-transform: uppercase;
+    color: var(--color-white);
+    white-space: nowrap;
+  }
+
+  .live-indicator--alt .live-indicator__label {
+    color: var(--color-black);
+  }
+
+  .patient-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .patient-info__name {
+    font-size: var(--fs-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-white);
+    white-space: nowrap;
+  }
+
+  .patient-info__meta {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .patient-info__meta--lg {
+    font-size: var(--fs-sm);
+  }
+
+  .patient-editable {
+    display: inline-block;
+    min-width: 12px;
+    outline: none;
+    border-bottom: 1px dashed transparent;
+    border-radius: 2px;
+    padding: 0 2px;
+    cursor: text;
+  }
+
+  .patient-editable:hover {
+    border-bottom-color: var(--color-text-muted);
+  }
+
+  .patient-editable:focus {
+    border-bottom-color: var(--color-green);
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .header-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    padding: var(--space-8) var(--space-16);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-white);
+  }
+
+  .header-btn--alt {
+    background-color: var(--color-surface-alt);
+  }
+
+  .header-btn__icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .header-btn__icon--sm {
+    width: 12px;
+    height: 12px;
+  }
+
+  .header-btn__text {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+  }
+
+  /* ---------- Confidence card ---------- */
+  .confidence-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-24);
+    width: 100%;
+    padding: var(--space-24);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+  }
+
+  .confidence-card__left {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    flex-shrink: 0;
+    width: 280px;
+  }
+
+  .confidence-card__label {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
+    text-transform: uppercase;
+    color: var(--color-text-label);
+  }
+
+  .confidence-card__value-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-12);
+  }
+
+  .confidence-card__value {
+    font-size: var(--fs-4xl);
+    font-weight: var(--fw-extrabold);
+    color: var(--color-white);
+    line-height: 1;
+  }
+
+  .confidence-card__status {
+    font-size: var(--fs-md);
+    font-weight: var(--fw-semibold);
+    color: var(--color-green);
+  }
+
+  .confidence-card__ecg {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-8);
+    flex: 1 0 0;
+    min-width: 0;
+    align-self: stretch;
+    padding: var(--space-16) var(--space-24);
+  }
+
+  .confidence-card__ecg-label {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-ecg-label);
+    white-space: nowrap;
+  }
+
+  .confidence-card__ecg-image {
+    width: 100%;
+    aspect-ratio: 810 / 55.1386;
+  }
+
+  /* ---------- Metrics grid ---------- */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-24);
+    width: 100%;
+  }
+
+  .metric-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+    padding: var(--space-24);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+  }
+
+  .metric-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .metric-card__title {
+    font-size: var(--fs-base);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    color: var(--color-text-label);
+  }
+
+  .metric-card__value {
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-extrabold);
+    color: var(--color-white);
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  .metric-card__value--accent {
+    color: var(--color-green);
+  }
+
+  .metric-card__unit {
+    font-size: var(--fs-lg);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-label);
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-4) var(--space-10);
+    border-radius: var(--radius-md);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .status-badge--sm {
+    font-size: var(--fs-2xs);
+  }
+
+  .status-badge--bg-good {
+    background-color: var(--color-badge-bg-good);
+  }
+
+  .status-badge--bg-warning {
+    background-color: var(--color-badge-bg-warning);
+  }
+
+  .status-badge--warning {
+    color: var(--color-amber);
+  }
+
+  .status-badge--warning-alt {
+    color: var(--color-amber-alt);
+  }
+
+  .status-badge--good {
+    color: var(--color-green);
+  }
+
+  .status-badge--good-alt {
+    color: var(--color-green-alt);
+  }
+
+  .status-badge__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-badge__dot--warning {
+    background-color: var(--color-amber);
+  }
+
+  .status-badge__dot--warning-alt {
+    background-color: var(--color-amber-alt);
+  }
+
+  .status-badge__dot--good {
+    background-color: var(--color-green);
+  }
+
+  .status-badge__dot--good-alt {
+    background-color: var(--color-green-alt);
+  }
+
+  /* ---------- Footer ---------- */
+  .footer-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-top: var(--space-16);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .footer-strip__left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+  }
+
+  .footer-strip__battery {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-label);
+    white-space: nowrap;
+  }
+
+  .footer-strip__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--color-green);
+  }
+
+  /* ---------- History card & table ---------- */
+  .history-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+    width: 100%;
+    height: 739px;
+    padding: var(--space-24);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+  }
+
+  .history-card__title-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    flex-shrink: 0;
+  }
+
+  .history-card__title {
+    font-size: var(--fs-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-white);
+  }
+
+  .history-card__subtitle {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-regular);
+    color: var(--color-text-muted);
+  }
+
+  .history-card__table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .history-table {
+    width: 100%;
+    min-width: 700px;
+  }
+
+  .history-table th {
+    background-color: var(--color-table-head-bg);
+    color: var(--color-text-label);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    text-align: left;
+    padding: var(--space-12) var(--space-16);
+  }
+
+  .history-table th:first-child {
+    border-top-left-radius: var(--radius-lg);
+  }
+
+  .history-table th:last-child {
+    border-top-right-radius: var(--radius-lg);
+  }
+
+  .history-table tbody tr {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .history-table tbody tr:nth-child(odd) {
+    background-color: var(--color-table-row-odd);
+  }
+
+  .history-table tbody tr:nth-child(even) {
+    background-color: var(--color-table-row-even);
+  }
+
+  .history-table td {
+    padding: var(--space-12) var(--space-16);
+    font-size: var(--fs-base);
+    vertical-align: middle;
+  }
+
+  .history-table__week {
+    width: 200px;
+    font-weight: var(--fw-semibold);
+    color: var(--color-white);
+  }
+
+  .history-table__date {
+    width: 220px;
+    font-weight: var(--fw-regular);
+    color: var(--color-text-muted);
+  }
+
+  .history-table__fhr {
+    width: 220px;
+    font-weight: var(--fw-bold);
+    color: var(--color-white);
+  }
+
+  /* ---------- Trend alert ---------- */
+  .trend-alert {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    width: 100%;
+    padding: var(--space-20);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-amber-alt);
+    border-left-width: 4px;
+    border-radius: var(--radius-2xl);
+  }
+
+  .trend-alert__icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: var(--space-8);
+    background-color: var(--color-badge-bg-warning);
+    border-radius: var(--radius-lg);
+  }
+
+  .trend-alert__icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .trend-alert__text {
+    flex: 1 0 0;
+    min-width: 0;
+    font-size: var(--fs-base);
+    font-weight: var(--fw-semibold);
+    line-height: 22px;
+    color: var(--color-amber-alt);
+  }
+
+  /* ============ Tablet (max-width: 1024px) ============ */
+  @media (max-width: 1024px) {
+    .dashboard {
+      padding: var(--space-24);
+    }
+
+    .header-bar {
+      flex-wrap: wrap;
+      row-gap: var(--space-16);
+    }
+
+    .header-bar__toggle {
+      display: flex;
+    }
+
+    .header-bar__right {
+      order: 3;
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-8);
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      margin-top: 0;
+      transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+    }
+
+    .header-bar__right.is-open {
+      max-height: 320px;
+      opacity: 1;
+      margin-top: var(--space-4);
+    }
+
+    .header-btn {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .confidence-card {
+      flex-wrap: wrap;
+    }
+
+    .confidence-card__left {
+      width: 100%;
+    }
+
+    .confidence-card__ecg {
+      padding: var(--space-16) 0 0 0;
+    }
+
+    .history-card {
+      height: auto;
+    }
+  }
+
+  /* ============ Mobile (max-width: 768px) ============ */
+  @media (max-width: 768px) {
+    .dashboard {
+      padding: var(--space-16);
+      gap: var(--space-16);
+    }
+
+    .header-bar__left {
+      flex-wrap: wrap;
+      gap: var(--space-12);
+    }
+
+    .confidence-card {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-16);
+      padding: var(--space-16);
+    }
+
+    .confidence-card__value {
+      font-size: 40px;
+    }
+
+    .metrics-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .metric-card {
+      padding: var(--space-16);
+    }
+
+    .metric-card__value {
+      font-size: 36px;
+    }
+
+    .footer-strip {
+      flex-wrap: wrap;
+      gap: var(--space-8);
+    }
+
+    .history-card {
+      padding: var(--space-16);
+    }
+
+    .trend-alert {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: var(--space-16);
+    }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ================= Monitor view ================= -->
+  <div class="dashboard view" id="monitorView">
+    <header class="header-bar">
+      <div class="header-bar__left">
+        <div class="live-indicator">
+          <span class="live-indicator__dot" aria-hidden="true"></span>
+          <span class="live-indicator__label">Live</span>
+        </div>
+        <div class="patient-info">
+          <p class="patient-info__name">Patient <span class="patient-editable" data-field="name" contenteditable="true" spellcheck="false" role="textbox" aria-label="Patient name">Jane Doe</span></p>
+          <p class="patient-info__meta">Hospital Number: <span class="patient-editable" data-field="hospitalNo" contenteditable="true" spellcheck="false" role="textbox" aria-label="Hospital number">123-456-789</span></p>
+          <p class="patient-info__meta">Gestation: <span class="patient-editable" data-field="gestation" contenteditable="true" spellcheck="false" role="textbox" aria-label="Gestation">38 weeks 0 days</span></p>
+        </div>
+      </div>
+
+      <button class="header-bar__toggle" type="button" aria-expanded="false" aria-controls="monitorHeaderActions" aria-label="Toggle actions menu">
+        <span class="header-bar__toggle-bar"></span>
+        <span class="header-bar__toggle-bar"></span>
+        <span class="header-bar__toggle-bar"></span>
+      </button>
+
+      <nav class="header-bar__right" id="monitorHeaderActions" aria-label="Header actions">
+        <button class="header-btn" type="button">
+          <img class="header-btn__icon" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiB2aWV3Qm94PSIwIDAgMTQgMTQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGlkPSJjYWxlbmRhciIgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwXzBfMTIpIj4KPHBhdGggaWQ9IlZlY3RvciIgZD0iTTQuNjY2NjcgMS4xNjYyVjMuNDk5NzJNOS4zMzMzMyAxLjE2NjJWMy40OTk3Mk0xLjc1IDUuODMzMjRIMTIuMjVNMi45MTY2NyAyLjMzMjk2SDExLjA4MzNDMTEuNzI3NyAyLjMzMjk2IDEyLjI1IDIuODU1MzQgMTIuMjUgMy40OTk3MlYxMS42NjdDMTIuMjUgMTIuMzExNCAxMS43Mjc3IDEyLjgzMzggMTEuMDgzMyAxMi44MzM4SDIuOTE2NjdDMi4yNzIzMyAxMi44MzM4IDEuNzUgMTIuMzExNCAxLjc1IDExLjY2N1YzLjQ5OTcyQzEuNzUgMi44NTUzNCAyLjI3MjMzIDIuMzMyOTYgMi45MTY2NyAyLjMzMjk2WiIgc3Ryb2tlPSIjOTRBM0I4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L2c+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImNsaXAwXzBfMTIiPgo8cmVjdCB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIGZpbGw9IndoaXRlIi8+CjwvY2xpcFBhdGg+CjwvZGVmcz4KPC9zdmc+Cg==" alt="" />
+          <span class="header-btn__text">1st January 2026</span>
+        </button>
+        <button class="header-btn" type="button">
+          <img class="header-btn__icon" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiB2aWV3Qm94PSIwIDAgMTQgMTQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGlkPSJjbG9jayIgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwXzBfMTApIj4KPHBhdGggaWQ9IlZlY3RvciIgZD0iTTcgMy40OTk3MlY3TDkuMzMzNTIgOC4xNjY3Nk0xMi44MzM4IDdDMTIuODMzOCAxMC4yMjE5IDEwLjIyMTkgMTIuODMzOCA3IDEyLjgzMzhDMy43NzgwOCAxMi44MzM4IDEuMTY2MiAxMC4yMjE5IDEuMTY2MiA3QzEuMTY2MiAzLjc3ODA4IDMuNzc4MDggMS4xNjYyIDcgMS4xNjYyQzEwLjIyMTkgMS4xNjYyIDEyLjgzMzggMy43NzgwOCAxMi44MzM4IDdaIiBzdHJva2U9IiM5NEEzQjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjwvZz4KPGRlZnM+CjxjbGlwUGF0aCBpZD0iY2xpcDBfMF8xMCI+CjxyZWN0IHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgZmlsbD0id2hpdGUiLz4KPC9jbGlwUGF0aD4KPC9kZWZzPgo8L3N2Zz4K" alt="" />
+          <span class="header-btn__text">00:00</span>
+        </button>
+        <button class="header-btn" type="button" id="btnHistory">
+          <img class="header-btn__icon" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiB2aWV3Qm94PSIwIDAgMTQgMTQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGlkPSJmaWxlLXRleHQiPgo8cGF0aCBpZD0iVmVjdG9yIiBkPSJNOC4xNjY1NSAxLjE2NjJIMy41MDAzNUMzLjE5MDk2IDEuMTY2MiAyLjg5NDI1IDEuMjg5MTMgMi42NzU0NyAxLjUwNzk0QzIuNDU2NyAxLjcyNjc1IDIuMzMzOCAyLjAyMzUyIDIuMzMzOCAyLjMzMjk2VjExLjY2N0MyLjMzMzggMTEuOTc2NSAyLjQ1NjcgMTIuMjczMyAyLjY3NTQ3IDEyLjQ5MjFDMi44OTQyNSAxMi43MTA5IDMuMTkwOTYgMTIuODMzOCAzLjUwMDM1IDEyLjgzMzhIMTAuNDk5NkMxMC44MDkgMTIuODMzOCAxMS4xMDU4IDEyLjcxMDkgMTEuMzI0NSAxMi40OTIxQzExLjU0MzMgMTIuMjczMyAxMS42NjYyIDExLjk3NjUgMTEuNjY2MiAxMS42NjdWNC42NjY0OE04LjE2NjU1IDEuMTY2MkM4LjM1MTE5IDEuMTY1OSA4LjUzNDA2IDEuMjAyMTQgOC43MDQ2NCAxLjI3MjgzQzguODc1MjEgMS4zNDM1MSA5LjAzMDEzIDEuNDQ3MjUgOS4xNjA0NSAxLjU3ODA3TDExLjI1MzIgMy42NzEyNEMxMS4zODQ0IDMuODAxNjIgMTEuNDg4NCAzLjk1NjcxIDExLjU1OTMgNC4xMjc1M0MxMS42MzAyIDQuMjk4MzYgMTEuNjY2NSA0LjQ4MTUzIDExLjY2NjIgNC42NjY0OE04LjE2NjU1IDEuMTY2MlY0LjA4MzFDOC4xNjY1NSA0LjIzNzgyIDguMjI4IDQuMzg2MjEgOC4zMzczOSA0LjQ5NTYxQzguNDQ2NzcgNC42MDUwMiA4LjU5NTEzIDQuNjY2NDggOC43NDk4MiA0LjY2NjQ4TDExLjY2NjIgNC42NjY0OE01LjgzMzQ1IDUuMjQ5ODZINC42NjY5TTkuMzMzMSA3LjU4MzM4SDQuNjY2OU05LjMzMzEgOS45MTY5SDQuNjY2OSIgc3Ryb2tlPSIjOTRBM0I4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L2c+Cjwvc3ZnPgo=" alt="" />
+          <span class="header-btn__text">History</span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <p id="backendErrorMsg" role="alert" hidden
+         style="width:100%; padding: var(--space-12) var(--space-16); background-color: rgba(239,68,68,0.12); border: 1px solid var(--color-red); border-radius: var(--radius-lg); color: var(--color-white); font-size: var(--fs-sm); font-weight: var(--fw-semibold);"></p>
+
+      <section class="confidence-card" aria-label="Signal confidence">
+        <div class="confidence-card__left">
+          <p class="confidence-card__label">Signal Confidence</p>
+          <div class="confidence-card__value-row">
+            <span class="confidence-card__value" id="confidenceValue">--%</span>
+            <span class="confidence-card__status" id="confidenceStatus">Loading…</span>
+          </div>
+        </div>
+        <div class="confidence-card__ecg">
+          <p class="confidence-card__ecg-label">Live Foetal ECG Recording</p>
+          <img class="confidence-card__ecg-image" id="ecgImage" src="" alt="Live foetal ECG waveform trace" />
+        </div>
+      </section>
+
+      <div class="metrics-grid">
+        <article class="metric-card">
+          <div class="metric-card__header">
+            <h3 class="metric-card__title">Foetal Heart Rate</h3>
+            <span class="status-badge" id="fhrBadge">
+              <span class="status-badge__dot" id="fhrBadgeDot" aria-hidden="true"></span>
+              <span id="fhrBadgeText">--</span>
+            </span>
+          </div>
+          <p class="metric-card__value" id="fhrValue">-- bpm</p>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-card__header">
+            <h3 class="metric-card__title">RR Variability</h3>
+            <span class="status-badge" id="rrvBadge">
+              <span class="status-badge__dot" id="rrvBadgeDot" aria-hidden="true"></span>
+              <span id="rrvBadgeText">--</span>
+            </span>
+          </div>
+          <p class="metric-card__value" id="rrvValue">-- <span class="metric-card__unit">bpm</span></p>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-card__header">
+            <h3 class="metric-card__title">Accelerations</h3>
+            <span class="status-badge" id="accelBadge">
+              <span class="status-badge__dot" id="accelBadgeDot" aria-hidden="true"></span>
+              <span id="accelBadgeText">--</span>
+            </span>
+          </div>
+          <p class="metric-card__value metric-card__value--accent" id="accelValue">--</p>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-card__header">
+            <h3 class="metric-card__title">Decelerations</h3>
+            <span class="status-badge" id="decelBadge">
+              <span class="status-badge__dot" id="decelBadgeDot" aria-hidden="true"></span>
+              <span id="decelBadgeText">--</span>
+            </span>
+          </div>
+          <p class="metric-card__value metric-card__value--accent" id="decelValue">--</p>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer-strip">
+      <div class="footer-strip__left">
+        <p class="footer-strip__battery">Battery: 94%</p>
+        <span class="footer-strip__dot" aria-hidden="true"></span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ================= History view ================= -->
+  <div class="dashboard view" id="historyView" hidden>
+    <header class="header-bar">
+      <div class="header-bar__left">
+        <div class="live-indicator live-indicator--alt">
+          <span class="live-indicator__dot" aria-hidden="true"></span>
+          <span class="live-indicator__label">Live</span>
+        </div>
+        <div class="patient-info">
+          <p class="patient-info__name">Patient <span class="patient-editable" data-field="name" contenteditable="true" spellcheck="false" role="textbox" aria-label="Patient name">Jane Doe</span></p>
+          <p class="patient-info__meta patient-info__meta--lg">Hospital Number: <span class="patient-editable" data-field="hospitalNo" contenteditable="true" spellcheck="false" role="textbox" aria-label="Hospital number">123-456-789</span></p>
+          <p class="patient-info__meta patient-info__meta--lg">Gestation: <span class="patient-editable" data-field="gestation" contenteditable="true" spellcheck="false" role="textbox" aria-label="Gestation">38 weeks 0 days</span></p>
+        </div>
+      </div>
+
+      <button class="header-bar__toggle" type="button" aria-expanded="false" aria-controls="historyHeaderActions" aria-label="Toggle actions menu">
+        <span class="header-bar__toggle-bar"></span>
+        <span class="header-bar__toggle-bar"></span>
+        <span class="header-bar__toggle-bar"></span>
+      </button>
+
+      <nav class="header-bar__right" id="historyHeaderActions" aria-label="Header actions">
+        <button class="header-btn header-btn--alt" type="button" id="btnBackToMonitor">
+          <img class="header-btn__icon header-btn__icon--sm" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjEyIiBoZWlnaHQ9IjEyIiB2aWV3Qm94PSIwIDAgMTIgMTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGlkPSJhcnJvdy1sZWZ0Ij4KPHBhdGggaWQ9IlZlY3RvciIgZD0iTTYgMi40OTk2TDIuNDk5NiA2TDYgOS41MDA0TTIuNDk5NiA2SDkuNTAwNCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9nPgo8L3N2Zz4K" alt="" />
+          <span class="header-btn__text">Back to Monitor</span>
+        </button>
+        <button class="header-btn" type="button">
+          <img class="header-btn__icon" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiB2aWV3Qm94PSIwIDAgMTQgMTQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGlkPSJjYWxlbmRhciIgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwXzBfMTIpIj4KPHBhdGggaWQ9IlZlY3RvciIgZD0iTTQuNjY2NjcgMS4xNjYyVjMuNDk5NzJNOS4zMzMzMyAxLjE2NjJWMy40OTk3Mk0xLjc1IDUuODMzMjRIMTIuMjVNMi45MTY2NyAyLjMzMjk2SDExLjA4MzNDMTEuNzI3NyAyLjMzMjk2IDEyLjI1IDIuODU1MzQgMTIuMjUgMy40OTk3MlYxMS42NjdDMTIuMjUgMTIuMzExNCAxMS43Mjc3IDEyLjgzMzggMTEuMDgzMyAxMi44MzM4SDIuOTE2NjdDMi4yNzIzMyAxMi44MzM4IDEuNzUgMTIuMzExNCAxLjc1IDExLjY2N1YzLjQ5OTcyQzEuNzUgMi44NTUzNCAyLjI3MjMzIDIuMzMyOTYgMi45MTY2NyAyLjMzMjk2WiIgc3Ryb2tlPSIjOTRBM0I4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L2c+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImNsaXAwXzBfMTIiPgo8cmVjdCB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIGZpbGw9IndoaXRlIi8+CjwvY2xpcFBhdGg+CjwvZGVmcz4KPC9zdmc+Cg==" alt="" />
+          <span class="header-btn__text">1st January 2026</span>
+        </button>
+        <button class="header-btn" type="button">
+          <img class="header-btn__icon" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiB2aWV3Qm94PSIwIDAgMTQgMTQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGlkPSJjbG9jayIgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwXzBfMTApIj4KPHBhdGggaWQ9IlZlY3RvciIgZD0iTTcgMy40OTk3MlY3TDkuMzMzNTIgOC4xNjY3Nk0xMi44MzM4IDdDMTIuODMzOCAxMC4yMjE5IDEwLjIyMTkgMTIuODMzOCA3IDEyLjgzMzhDMy43NzgwOCAxMi44MzM4IDEuMTY2MiAxMC4yMjE5IDEuMTY2MiA3QzEuMTY2MiAzLjc3ODA4IDMuNzc4MDggMS4xNjYyIDcgMS4xNjYyQzEwLjIyMTkgMS4xNjYyIDEyLjgzMzggMy43NzgwOCAxMi44MzM4IDdaIiBzdHJva2U9IiM5NEEzQjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjwvZz4KPGRlZnM+CjxjbGlwUGF0aCBpZD0iY2xpcDBfMF8xMCI+CjxyZWN0IHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgZmlsbD0id2hpdGUiLz4KPC9jbGlwUGF0aD4KPC9kZWZzPgo8L3N2Zz4K" alt="" />
+          <span class="header-btn__text">00:00</span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="history-card" aria-label="Foetal heart rate history">
+        <div class="history-card__title-group">
+          <p class="history-card__title">Foetal Heart Rate History — Week by Week Overview</p>
+        </div>
+
+        <div class="trend-alert" role="alert" id="lowConfidenceBox" hidden style="margin-bottom: var(--space-16);">
+          <div class="trend-alert__icon-wrap">
+            <img class="trend-alert__icon" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiB2aWV3Qm94PSIwIDAgMjAgMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGlkPSJhbGVydC10cmlhbmdsZSI+CjxwYXRoIGlkPSJWZWN0b3IiIGQ9Ik05Ljk5OTk4IDcuNDk5MzlWMTAuODMyN005Ljk5OTk4IDE0LjE2NjFIMTAuMDA4M00xOC4xMDg3IDE0Ljk5OTZMMTEuNDQyIDMuMzMyOTFDMTEuMjk2NiAzLjA3NjQyIDExLjA4NTggMi44NjMwNyAxMC44MzExIDIuNzE0NjRDMTAuNTc2NCAyLjU2NjIxIDEwLjI4NjggMi40ODggOS45OTIgMi40ODhDOS42OTcxNyAyLjQ4OCA5LjQwNzYzIDIuNTY2MjEgOS4xNTI4OSAyLjcxNDY0QzguODk4MTYgMi44NjMwNyA4LjY4NzM2IDMuMDc2NDIgOC41NDIgMy4zMzI5MUwxLjg3NTMzIDE0Ljk5OTZDMS43Mjg0IDE1LjI1NCAxLjY1MTM1IDE1LjU0MjggMS42NTIgMTUuODM2N0MxLjY1MjY1IDE2LjEzMDUgMS43MzA5OCAxNi40MTkgMS44NzkwNCAxNi42NzI4QzIuMDI3MDkgMTYuOTI2NiAyLjIzOTYyIDE3LjEzNjcgMi40OTUwOCAxNy4yODE5QzIuNzUwNTMgMTcuNDI3MSAzLjAzOTg0IDE3LjUwMjIgMy4zMzM2NiAxNy40OTk2SDE2LjY2N0MxNi45NTk0IDE3LjQ5OTMgMTcuMjQ2NiAxNy40MjIxIDE3LjQ5OTcgMTcuMjc1NkMxNy43NTI5IDE3LjEyOTIgMTcuOTYzIDE2LjkxODggMTguMTA5MSAxNi42NjU1QzE4LjI1NTIgMTYuNDEyMiAxOC4zMzIgMTYuMTI0OSAxOC4zMzIgMTUuODMyNUMxOC4zMzE5IDE1LjU0MDEgMTguMjU0OSAxNS4yNTI4IDE4LjEwODcgMTQuOTk5NloiIHN0cm9rZT0iI0Y1OUUwQiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9nPgo8L3N2Zz4K" alt="" />
+          </div>
+          <p class="trend-alert__text">Low signal confidence- please be cautious when interpreting these values.</p>
+        </div>
+
+        <div class="history-card__table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th scope="col">Reading</th>
+                <th scope="col">Date &amp; Time</th>
+                <th scope="col">FHR (bpm)</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr><td colspan="4" style="color: var(--color-text-muted);">Loading history…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="trend-alert" role="note" id="trendAlertBox" hidden>
+        <div class="trend-alert__icon-wrap">
+          <img class="trend-alert__icon" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiB2aWV3Qm94PSIwIDAgMjAgMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGlkPSJhbGVydC10cmlhbmdsZSI+CjxwYXRoIGlkPSJWZWN0b3IiIGQ9Ik05Ljk5OTk4IDcuNDk5MzlWMTAuODMyN005Ljk5OTk4IDE0LjE2NjFIMTAuMDA4M00xOC4xMDg3IDE0Ljk5OTZMMTEuNDQyIDMuMzMyOTFDMTEuMjk2NiAzLjA3NjQyIDExLjA4NTggMi44NjMwNyAxMC44MzExIDIuNzE0NjRDMTAuNTc2NCAyLjU2NjIxIDEwLjI4NjggMi40ODggOS45OTIgMi40ODhDOS42OTcxNyAyLjQ4OCA5LjQwNzYzIDIuNTY2MjEgOS4xNTI4OSAyLjcxNDY0QzguODk4MTYgMi44NjMwNyA4LjY4NzM2IDMuMDc2NDIgOC41NDIgMy4zMzI5MUwxLjg3NTMzIDE0Ljk5OTZDMS43Mjg0IDE1LjI1NCAxLjY1MTM1IDE1LjU0MjggMS42NTIgMTUuODM2N0MxLjY1MjY1IDE2LjEzMDUgMS43MzA5OCAxNi40MTkgMS44NzkwNCAxNi42NzI4QzIuMDI3MDkgMTYuOTI2NiAyLjIzOTYyIDE3LjEzNjcgMi40OTUwOCAxNy4yODE5QzIuNzUwNTMgMTcuNDI3MSAzLjAzOTg0IDE3LjUwMjIgMy4zMzM2NiAxNy40OTk2SDE2LjY2N0MxNi45NTk0IDE3LjQ5OTMgMTcuMjQ2NiAxNy40MjIxIDE3LjQ5OTcgMTcuMjc1NkMxNy43NTI5IDE3LjEyOTIgMTcuOTYzIDE2LjkxODggMTguMTA5MSAxNi42NjU1QzE4LjI1NTIgMTYuNDEyMiAxOC4zMzIgMTYuMTI0OSAxOC4zMzIgMTUuODMyNUMxOC4zMzE5IDE1LjU0MDEgMTguMjU0OSAxNS4yNTI4IDE4LjEwODcgMTQuOTk5NloiIHN0cm9rZT0iI0Y1OUUwQiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9nPgo8L3N2Zz4K" alt="" />
+        </div>
+        <p class="trend-alert__text" id="trendAlertText"></p>
+      </div>
+    </main>
+  </div>
+
+<script>
+  (function () {
+    // Hamburger menu toggles (shared behaviour for both views)
+    document.querySelectorAll('.header-bar__toggle').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        var menu = document.getElementById(toggle.getAttribute('aria-controls'));
+        var isOpen = menu.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', String(isOpen));
+      });
+    });
+
+    // View navigation between Monitor and History screens
+    var monitorView = document.getElementById('monitorView');
+    var historyView = document.getElementById('historyView');
+
+    function showView(view) {
+      monitorView.hidden = view !== 'monitor';
+      historyView.hidden = view !== 'history';
+      window.scrollTo(0, 0);
+    }
+
+    document.getElementById('btnHistory').addEventListener('click', function () {
+      showView('history');
+    });
+
+    document.getElementById('btnBackToMonitor').addEventListener('click', function () {
+      showView('monitor');
+    });
+
+    // ---------------------------------------------------------------
+    // Backend wiring: pulls live numbers from server.py (which runs
+    // O5.py's analysis) instead of the hardcoded demo values above.
+    // ---------------------------------------------------------------
+    var POLL_MS = 5000;   // how often the monitor view refreshes while open
+
+    function setBadge(prefix, tone, text) {
+      // tone is "good" or "warning" -- sets background + text + dot
+      // classes together so they never fall out of sync.
+      var badge = document.getElementById(prefix + 'Badge');
+      var dot = document.getElementById(prefix + 'BadgeDot');
+      var label = document.getElementById(prefix + 'BadgeText');
+      if (!badge) return;
+      badge.className = 'status-badge status-badge--bg-' + tone + ' status-badge--' + tone;
+      dot.className = 'status-badge__dot status-badge__dot--' + tone;
+      label.textContent = text;
+    }
+
+    var lastLowConfidence = null;
+
+    function updateLowConfidenceBox() {
+      var box = document.getElementById('lowConfidenceBox');
+      if (!box) return;
+      box.hidden = !lastLowConfidence;
+    }
+
+    function applyLatest(data) {
+      document.getElementById('confidenceValue').textContent =
+        (data.confidence_pct == null ? '--' : data.confidence_pct) + '%';
+      document.getElementById('confidenceStatus').textContent = data.confidence_status;
+      lastLowConfidence = data.low_confidence;
+      updateLowConfidenceBox();
+
+      document.getElementById('fhrValue').textContent =
+        (data.fhr_bpm == null ? '--' : data.fhr_bpm) + ' bpm';
+      setBadge('fhr', data.fhr_badge.tone, data.fhr_badge.text);
+
+      document.getElementById('rrvValue').innerHTML =
+        (data.rr_variability_bpm == null ? '--' : data.rr_variability_bpm) +
+        ' <span class="metric-card__unit">bpm</span>';
+      setBadge('rrv', data.rr_variability_badge.tone, data.rr_variability_badge.text);
+
+      document.getElementById('accelValue').textContent = data.accelerations_present ? 'Yes' : 'No';
+      setBadge('accel', data.accelerations_present ? 'good' : 'good', data.accelerations_present ? 'Present' : 'Absent');
+
+      document.getElementById('decelValue').textContent = data.decelerations_present ? 'Yes' : 'No';
+      setBadge('decel', data.decelerations_badge.tone, data.decelerations_badge.text);
+
+      // Cache-bust so the browser doesn't reuse a stale strip image.
+      document.getElementById('ecgImage').src = '/api/ecg.png?t=' + Date.now();
+    }
+
+    function loadLatest() {
+      fetch('/api/latest')
+        .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+        .then(function (result) {
+          if (!result.ok) {
+            throw new Error(result.body.error || 'Server returned an error.');
+          }
+          applyLatest(result.body);
+        })
+        .catch(function (err) {
+          console.error('Failed to load /api/latest:', err);
+          document.getElementById('confidenceStatus').textContent = 'Error';
+          document.getElementById('confidenceValue').textContent = '--%';
+          var msg = document.getElementById('backendErrorMsg');
+          if (msg) {
+            msg.textContent = 'Could not load data from the backend: ' + err.message +
+              ' (check the Terminal window running server.py for details)';
+            msg.hidden = false;
+          }
+        });
+    }
+
+    function statusToBadgeClass(status) {
+      return status.indexOf('Reassuring') === 0 ? 'status-badge--bg-good status-badge--good status-badge__dot--good'
+        : 'status-badge--bg-warning status-badge--warning status-badge__dot--warning';
+    }
+
+    function loadHistory() {
+      fetch('/api/history')
+        .then(function (r) { return r.json(); })
+        .then(function (rows) {
+          var tbody = document.getElementById('historyTableBody');
+          if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="color: var(--color-text-muted);">' +
+              'No readings yet -- run O5 (or POST to /api/analyze) to add one.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = rows.map(function (row, i) {
+            var cls = statusToBadgeClass(row.status);
+            var badgeParts = cls.split(' ');
+            var dotClass = badgeParts.pop();
+            var badgeClass = badgeParts.join(' ');
+            return '<tr>' +
+              '<td class="history-table__week">#' + (i + 1) + '</td>' +
+              '<td class="history-table__date">' + row.date + '</td>' +
+              '<td class="history-table__fhr">' + (row.fhr_bpm == null ? '--' : row.fhr_bpm + ' bpm') + '</td>' +
+              '<td><span class="status-badge status-badge--sm ' + badgeClass + '">' +
+              '<span class="status-badge__dot ' + dotClass + '" aria-hidden="true"></span>' + row.status + '</span></td>' +
+              '</tr>';
+          }).join('');
+
+          // Simple trend alert: flag it if the most recent reading isn't Reassuring.
+          var last = rows[rows.length - 1];
+          var alertBox = document.getElementById('trendAlertBox');
+          if (last.status.indexOf('Reassuring') !== 0) {
+            document.getElementById('trendAlertText').textContent =
+              'Trend Alert: most recent reading (' + last.date + ') was classified "' + last.status + '". Clinical review recommended.';
+            alertBox.hidden = false;
+          } else {
+            alertBox.hidden = true;
+          }
+        })
+        .catch(function (err) { console.error('Failed to load /api/history:', err); });
+    }
+
+    loadLatest();
+    loadHistory();
+    setInterval(loadLatest, POLL_MS);
+
+    document.getElementById('btnHistory').addEventListener('click', function () {
+      loadHistory();
+      updateLowConfidenceBox();
+    });
+
+    // ---------------------------------------------------------------
+    // Editable patient details (name / hospital number / gestation).
+    // Both views show their own copy of these fields, so editing
+    // either one updates and saves both together via the backend.
+    // ---------------------------------------------------------------
+    function syncPatientField(field, value) {
+      document.querySelectorAll('.patient-editable[data-field="' + field + '"]').forEach(function (el) {
+        if (document.activeElement !== el && el.textContent !== value) {
+          el.textContent = value;
+        }
+      });
+    }
+
+    function loadPatientInfo() {
+      fetch('/api/patient')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          syncPatientField('name', data.name);
+          syncPatientField('hospitalNo', data.hospitalNo);
+          syncPatientField('gestation', data.gestation);
+        })
+        .catch(function (err) { console.error('Failed to load /api/patient:', err); });
+    }
+
+    function savePatientInfo(changedEl) {
+      var field = changedEl.getAttribute('data-field');
+      var value = changedEl.textContent.trim();
+      syncPatientField(field, value);
+      fetch('/api/patient', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: field, value: value })
+      }).catch(function (err) { console.error('Failed to save patient info:', err); });
+    }
+
+    document.querySelectorAll('.patient-editable').forEach(function (el) {
+      el.addEventListener('blur', function () { savePatientInfo(el); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+      });
+    });
+
+    loadPatientInfo();
+  })();
+</script>
+</body>
+</html>
